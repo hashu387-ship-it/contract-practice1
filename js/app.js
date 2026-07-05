@@ -523,17 +523,39 @@
     $$('.mm-node[data-kind="branch"]', stage).forEach(g => g.addEventListener('click', () => { const id = g.dataset.id; if (MM.collapsed.has(id)) MM.collapsed.delete(id); else MM.collapsed.add(id); drawMindmap(); }));
   }
   function applyMM() { const g = $('#mmRoot'); if (g) g.setAttribute('transform', `translate(${MM.tx} ${MM.ty}) scale(${MM.scale})`); }
+  /* ---- Hierarchy chart: the full syllabus as an explained, collapsible outline ---- */
+  function renderHierarchy() {
+    const c = $('#mmChart'); if (!c || !window.PT_HIERARCHY) return;
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    function node(n, depth) {
+      const kids = n.c || [], has = kids.length;
+      const style = n.col ? ` style="--hc:${n.col}"` : '';
+      const collapsed = depth >= 3 && has ? ' is-collapsed' : '';
+      let h = `<div class="hc-node${has ? ' hc-has' : ''}${collapsed}" data-depth="${depth}"${style}>`;
+      h += `<div class="hc-card">${has ? '<button class="hc-tog" aria-label="Fold"></button>' : '<span class="hc-dot"></span>'}<div class="hc-body"><div class="hc-title">${esc(n.t)}</div>${n.d ? `<div class="hc-explain">${esc(n.d)}</div>` : ''}</div></div>`;
+      if (has) h += `<div class="hc-children">${kids.map(k => node(k, depth + 1)).join('')}</div>`;
+      return h + '</div>';
+    }
+    c.innerHTML = `<div class="hc-tools"><span class="hc-count"></span><button class="hc-allbtn" data-hc="expand">⊕ Expand all</button><button class="hc-allbtn" data-hc="collapse">⊖ Collapse all</button></div><div class="hc-tree">${node(window.PT_HIERARCHY, 0)}</div>`;
+    c.querySelectorAll('.hc-tog').forEach(b => b.addEventListener('click', () => b.closest('.hc-node').classList.toggle('is-collapsed')));
+    c.querySelectorAll('.hc-allbtn').forEach(b => b.addEventListener('click', () => { const ex = b.dataset.hc === 'expand'; c.querySelectorAll('.hc-node.hc-has').forEach(n => n.classList.toggle('is-collapsed', !ex)); }));
+    const total = c.querySelectorAll('.hc-node').length;
+    c.querySelector('.hc-count').textContent = total + ' elements · every one explained';
+  }
   function initMindmap() {
     const el = $('#view-mindmap');
     if (!mmReady) {
+      const hasChart = C === window.COURSE_PT && window.PT_HIERARCHY;
       el.innerHTML = `<div class="mm-shell"><div class="mm-head"><h2>🧠 Mind Maps</h2>
+        ${hasChart ? `<div class="mm-mode" id="mmMode"><button class="mm-modebtn on" data-mode="radial">🌐 Radial map</button><button class="mm-modebtn" data-mode="chart">🗂️ Hierarchy + notes</button></div>` : ''}
         <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#2f6df0">${C === window.COURSE_PT ? '🗺️ Full syllabus' : 'Whole course'}</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
         <p>${C === window.COURSE_PT ? 'The entire Procurement &amp; Tendering syllabus in one map. ' : ''}Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
         <div class="mm-stage-wrap"><svg class="mm-stage" id="mmStage" xmlns="${NS}"></svg>
           <div class="mm-hint">Drag · Scroll to zoom · Click branch to fold</div>
           <div class="mm-controls"><button id="mmIn">＋</button><button id="mmOut">－</button><button id="mmFit" title="Fit">⤢</button><button id="mmExpand" title="Expand all">⊕</button><button id="mmCollapse" title="Collapse all">⊖</button></div>
           <div class="mm-legend"><b><span class="dot" style="background:#2f6df0"></span>Central</b><b><span class="dot" style="background:var(--amber)"></span>Topic</b><b><span class="dot" style="background:transparent;border:2px solid var(--ink-3)"></span>Concept</b></div>
-        </div></div>`;
+        </div>
+        ${hasChart ? `<div class="mm-chart" id="mmChart" hidden></div>` : ''}</div>`;
       wireMindmap(); mmReady = true;
       if (MM.map === 'course') seedMegaCollapse();
     }
@@ -541,6 +563,17 @@
   }
   function wireMindmap() {
     const stage = $('#mmStage');
+    const modeEl = $('#mmMode');
+    if (modeEl) modeEl.addEventListener('click', e => {
+      const b = e.target.closest('.mm-modebtn'); if (!b) return;
+      const chart = b.dataset.mode === 'chart';
+      $$('.mm-modebtn').forEach(x => x.classList.toggle('on', x === b));
+      const sw = $('.mm-stage-wrap'), pk = $('#mmPicker'), ch = $('#mmChart');
+      if (sw) sw.style.display = chart ? 'none' : '';
+      if (pk) pk.style.display = chart ? 'none' : '';
+      if (ch) { ch.hidden = !chart; if (chart && !ch.dataset.rendered) { renderHierarchy(); ch.dataset.rendered = '1'; } }
+      if (!chart) drawMindmap();
+    });
     $('#mmPicker').addEventListener('click', e => { const b = e.target.closest('.mm-pick'); if (!b) return; MM.map = b.dataset.map; MM.collapsed = new Set(); if (b.dataset.map === 'course') seedMegaCollapse(); $$('.mm-pick').forEach(x => { x.classList.toggle('on', x === b); if (x !== b && x.dataset.map !== 'course') x.style.background = ''; }); if (b.dataset.map !== 'course') b.style.background = b.style.getPropertyValue('--c'); drawMindmap(); });
     const zoom = f => { MM.scale = clamp(MM.scale * f, 0.2, 2.4); applyMM(); };
     $('#mmIn').addEventListener('click', () => zoom(1.2)); $('#mmOut').addEventListener('click', () => zoom(1 / 1.2)); $('#mmFit').addEventListener('click', drawMindmap);

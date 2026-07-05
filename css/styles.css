@@ -462,6 +462,35 @@ details.qa .qa-a { padding: 0 16px 14px 50px; color: var(--ink-2); font-size: 16
 .mm-legend .dot { width: 11px; height: 11px; border-radius: 4px; }
 .mm-hint { position: absolute; left: 14px; top: 14px; font-size: 13px; color: var(--ink-3); background: var(--glass-strong); border: 1px solid var(--edge); border-radius: 10px; padding: 6px 11px; }
 
+/* ---------- Mind-map mode toggle ---------- */
+.mm-mode { display: flex; gap: 6px; }
+.mm-modebtn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--edge); background: var(--glass-2); color: var(--ink-2); font-family: var(--font-ui); font-weight: 700; font-size: 14.5px; cursor: pointer; transition: all .16s; }
+.mm-modebtn:hover { border-color: var(--edge-2); }
+.mm-modebtn.on { color: #fff; border-color: transparent; background: linear-gradient(120deg, #2f6df0, #9b51e0); }
+
+/* ---------- Hierarchy chart (explained outline) ---------- */
+.mm-chart { border: 1px solid var(--edge); border-radius: var(--r); background: var(--glass); padding: 16px 18px 28px; }
+.hc-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.hc-count { color: var(--ink-3); font-size: 14px; margin-right: auto; }
+.hc-allbtn { padding: 7px 13px; border-radius: 10px; border: 1px solid var(--edge); background: var(--glass-strong); color: var(--ink); font-weight: 700; font-size: 14px; cursor: pointer; font-family: var(--font-ui); }
+.hc-allbtn:hover { border-color: var(--edge-2); }
+.hc-tree { --hc: #2f6df0; }
+.hc-node { position: relative; }
+.hc-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; margin: 6px 0; border-radius: 12px; background: var(--glass-2); border: 1px solid var(--edge); border-left: 4px solid var(--hc); }
+.hc-title { font-weight: 800; color: var(--ink); font-size: 16px; line-height: 1.3; }
+.hc-explain { color: var(--ink-2); font-size: 14px; line-height: 1.46; margin-top: 3px; }
+.hc-node[data-depth="0"] > .hc-card { border-left-width: 6px; background: linear-gradient(120deg, color-mix(in srgb, var(--hc) 24%, transparent), transparent); }
+.hc-node[data-depth="0"] > .hc-card .hc-title { font-family: var(--font-display); font-size: 27px; }
+.hc-node[data-depth="1"] > .hc-card { background: color-mix(in srgb, var(--hc) 16%, var(--glass-2)); }
+.hc-node[data-depth="1"] > .hc-card .hc-title { font-size: 19px; }
+.hc-node[data-depth="2"] > .hc-card .hc-title { font-size: 16.5px; }
+.hc-children { margin-left: 20px; padding-left: 16px; border-left: 2px solid color-mix(in srgb, var(--hc) 45%, transparent); }
+.hc-node.is-collapsed > .hc-children { display: none; }
+.hc-tog { flex: 0 0 auto; width: 22px; height: 22px; margin-top: 1px; border-radius: 7px; border: 1px solid var(--hc); background: var(--glass-strong); color: var(--ink); cursor: pointer; position: relative; }
+.hc-tog::before { content: '–'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; }
+.hc-node.is-collapsed > .hc-card .hc-tog::before { content: '+'; }
+.hc-dot { flex: 0 0 auto; width: 9px; height: 9px; margin: 8px 6px 0; border-radius: 50%; background: var(--hc); }
+
 /* ---------- Lightbox ---------- */
 .lightbox { position: fixed; inset: 0; z-index: 300; background: rgba(3,7,18,.9); backdrop-filter: blur(8px); display: grid; place-items: center; padding: 30px; }
 .lightbox[hidden] { display: none; }
