@@ -286,7 +286,79 @@
     intro();
   }
 
-  /* ---------------- Viva Q&A ---------------- */
+  /* ---------------- Viva Q&A (with related notes + pictures) ---------------- */
+  // Build section index once
+  let SEC_INDEX = null;
+  function secIndex() {
+    if (SEC_INDEX) return SEC_INDEX;
+    SEC_INDEX = {};
+    C.parts.forEach(p => p.sections.forEach(s => { SEC_INDEX[s.id] = { p, s }; }));
+    return SEC_INDEX;
+  }
+  // keyword -> section id (ordered; first match wins). Uses topic + question text.
+  const REL_MAP = [
+    [['retention bond'], 'retention'], [['retention'], 'retention'],
+    [['partial possession', 'sectional'], 'sectional-completion'],
+    [['acceleration'], 'acceleration'],
+    [['concurrent'], 'concurrent-delay-delay-classification'],
+    [['delay analysis', 'as-built', 'time impact'], 'delay-analysis-methods'],
+    [['loss and expense', 'loss & expense', 'loss/expense', 'l&e', 'disruption', 'global claim'], 'loss-expense-claims'],
+    [['novation'], 'novation'], [['assignment', 'collateral warranty'], 'privity'], [['privity'], 'privity'],
+    [['liquidated', 'lad', 'l&ad', 'delay damages'], 'completion-lad'],
+    [['time at large', 'prevention principle'], 'eot'],
+    [['extension of time', 'eot'], 'eot'],
+    [['prolongation', 'head office overhead', 'hudson', 'emden', 'eichleay', 'critical path', 'float', 'preliminaries'], 'prolongation'],
+    [['on demand', 'parent company', 'performance bond', 'bond', 'security', 'guarantee', 'sblc'], 'performance-bond'],
+    [['interim', 'ipc', 'stage payment', 'on-account', 'valuation', 'certificate'], 'interim-payment'],
+    [['advance payment'], 'advance-payment'],
+    [['fit for purpose', 'fitness', 'reasonable skill'], 'fitness-for-purpose-vs-reasonable-skill-care'],
+    [['material off site', 'material on site', 'materials', 'vesting'], 'materials'],
+    [['subrogation', 'cross liability'], 'cross-subrogation'],
+    [['indemnity', 'joint', 'insurance premium'], 'indemnity-vs-insurance-joint-names'],
+    [['insurance'], 'insurance'],
+    [['loi', 'letter of intent', 'quantum meruit', 'comfort letter'], 'loi'],
+    [['letter of acceptance', 'loa'], 'loa'],
+    [['force majeure', 'frustration'], 'force-majeure'],
+    [['set-off', 'set off', 'contra'], 'set-off-contra-charge-on-account-payment'],
+    [['suspension'], 'suspension-termination'],
+    [['determination', 'termination'], 'termination-determination'],
+    [['latent', 'patent', 'decennial'], 'patent-vs-latent-defects-decennial-liability'],
+    [['defect', 'dlp', 'rectification'], 'defects'],
+    [['provisional sum'], 'provisional-sums'],
+    [['nominated', 'named subcontractor', 'domestic', 'subcontractor', 'nomination'], 'subcontractors'],
+    [['variation', 'change management', 'compensation event'], 'variations'],
+    [['fluctuation'], 'fluctuations'],
+    [['time-bar', 'time bar', 'condition precedent'], 'time-bar-clauses'],
+    [['practical completion', 'substantial completion', 'taking over', 'toc', 'beneficial'], 'practical-substantial-completion'],
+    [['dispute', 'adjudication', 'arbitration', 'mediation', 'dab', 'daab'], 'dispute-avoidance-resolution-ladder'],
+    [['power of attorney', 'poa'], 'power-of-attorney-poa'],
+    [['entire agreement', 'boilerplate', 'limitation clause', 'particular condition'], 'boilerplate-entire-agreement-particular-conditions'],
+    [['contra proferentem', 'estoppel', 'without prejudice', 'doctrine', 'severability', 'repudiation'], 'key-legal-doctrines-glossary-terms'],
+    [['standard form', 'bespoke', 'fidic', 'jct', 'nec', 'blue book', 'green book', 'yellow book', 'silver book'], 'standard-forms'],
+    [['mandatory', 'general provision'], 'general-mandatory'],
+    [['legislation', 'law of the land', 'sharia', 'court'], 'legislation'],
+    [['priority of document', 'discrepancy', 'ambiguity'], 'priority-documents'],
+    [['express', 'implied', 'incorporated', 'oral contract', 'agreement', 'offer', 'acceptance', 'consideration', 'binding'], 'what-is-contract'],
+    [['engineer', 'role', 'responsib', 'obligation'], 'obligations-rights'],
+    [['pricing', 'lump sum', 're-measure', 'milestone'], 'contract-pricing-types-stage-milestone-payments'],
+  ];
+  function findRelated(it) {
+    const hay = ((it.topic || '') + ' ' + it.q).toLowerCase();
+    for (const [keys, id] of REL_MAP) { if (keys.some(k => hay.includes(k))) { if (secIndex()[id]) return id; } }
+    return null;
+  }
+  function relatedHTML(id) {
+    const rec = secIndex()[id]; if (!rec) return '';
+    const { p, s } = rec;
+    const img = s.img ? `<figure class="viva-relimg" data-full="${s.img}" data-cap="${s.title}"><img loading="lazy" src="${s.img}" alt="${s.title}" onerror="this.closest('figure').remove()"></figure>` : '';
+    const notes = s.blocks.map(renderBlock).join('');
+    return `<div class="viva-rel">
+      <div class="viva-rel-head">📖 Complete notes · <b>${s.title}</b> <span class="vtag">Part ${p.num}</span>
+        <button class="btn viva-open" data-sec="${s.id}" style="margin-left:auto;padding:6px 14px;font-size:14px">Open in Notes →</button></div>
+      ${img}
+      <p class="viva-relsum">${s.summary || ''}</p>
+      ${notes}</div>`;
+  }
   function initViva() {
     if (vivaReady) return; vivaReady = true;
     const el = $('#view-viva');
@@ -294,7 +366,7 @@
     const total = groups.reduce((a, g) => a + (g.items ? g.items.length : 0), 0);
     if (!total) { el.innerHTML = `<div class="viva-shell"><div class="viva-head glass"><h2>🎤 Viva Q&amp;A</h2><p>The examiner-style question bank is being prepared.</p></div></div>`; return; }
     el.innerHTML = `<div class="viva-shell">
-      <div class="viva-head glass"><h2>🎤 Viva Q&amp;A</h2><p>Real RICS/AIQS APC assessor-style questions with concise model answers. Tap a question to reveal the answer. <span class="viva-count">${total} questions</span></p>
+      <div class="viva-head glass"><h2>🎤 Viva Q&amp;A</h2><p>Real RICS/AIQS APC assessor-style questions. Tap a question to reveal the model answer, the topic's picture and the complete related notes. <span class="viva-count">${total} questions</span></p>
         <div class="viva-tools"><input id="vivaSearch" type="search" placeholder="Search questions & answers…"></div>
       </div>
       <div id="vivaBody"></div></div>`;
@@ -302,14 +374,27 @@
     function draw(q) {
       q = (q || '').trim().toLowerCase();
       let out = '';
-      groups.forEach((g, gi) => {
+      groups.forEach(g => {
         const items = (g.items || []).filter(it => !q || (it.q + ' ' + it.a + ' ' + (it.topic || '')).toLowerCase().includes(q));
         if (!items.length) return;
-        out += `<div class="viva-group"><h3>${g.title}</h3>` + items.map((it, i) =>
-          `<details class="viva-q"><summary><span class="qn">${i + 1}</span><span>${it.q}</span>${it.topic ? `<span class="vtag">${it.topic}</span>` : ''}</summary><div class="va">${it.a}</div></details>`).join('') + `</div>`;
+        out += `<div class="viva-group"><h3>${g.title}</h3>` + items.map((it, i) => {
+          const rel = findRelated(it);
+          return `<details class="viva-q" ${rel ? `data-rel="${rel}"` : ''}><summary><span class="qn">${i + 1}</span><span>${it.q}</span>${it.topic ? `<span class="vtag">${it.topic}</span>` : ''}</summary>` +
+            `<div class="va"><div class="va-answer"><span class="va-label">Model answer</span>${it.a}</div><div class="va-rel-slot"></div></div></details>`;
+        }).join('') + `</div>`;
       });
       body.innerHTML = out || `<div class="sr-empty">No questions match “${q}”.</div>`;
     }
+    // Lazy-inject related notes when a question opens (toggle captured on parent)
+    body.addEventListener('toggle', e => {
+      const d = e.target; if (!(d instanceof HTMLElement) || !d.classList.contains('viva-q') || !d.open) return;
+      const slot = $('.va-rel-slot', d); if (!slot || slot.dataset.done) return;
+      slot.dataset.done = '1';
+      const rel = d.dataset.rel; if (rel) slot.innerHTML = relatedHTML(rel);
+    }, true);
+    body.addEventListener('click', e => {
+      const o = e.target.closest('.viva-open'); if (o) { const sec = o.dataset.sec; switchView('notes'); const el2 = document.getElementById(sec); if (el2) setTimeout(() => el2.scrollIntoView({ behavior: 'smooth' }), 60); }
+    });
     $('#vivaSearch').addEventListener('input', e => draw(e.target.value));
     draw('');
   }
