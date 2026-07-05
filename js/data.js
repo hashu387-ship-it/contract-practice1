@@ -19,6 +19,8 @@
 window.COURSE = {
   meta: {
     title: 'Contract Practice & Administration',
+    titleHTML: 'Contract Practice <em>&amp;</em> Administration',
+    lead: 'MRICS & AIQS APC — everything for the RICS & AIQS APC: formation, FIDIC, securities, payments, insurance, time, claims, termination & completion — with realistic explainer videos, mind maps, flashcards, a quiz and a viva Q&A bank.',
     subtitle: 'MRICS & AIQS APC — Complete Interactive Study Notes',
     author: 'Course by Roshan de Silva · APC Coaching',
     credential: 'BSc(Hons)QS, LLM (Construction Law), MRICS, MAIQS, CQS',

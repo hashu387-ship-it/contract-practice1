@@ -153,6 +153,29 @@ a:hover { text-decoration: underline; }
 }
 .icon-btn:hover { transform: translateY(-1px); border-color: var(--edge-2); }
 
+/* ---------- Subject bar (RICS APC hub) ---------- */
+.subjectbar {
+  position: sticky; top: var(--nav-h); z-index: 85;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-bottom: 1px solid var(--edge);
+}
+.subject-pill {
+  border: 1px solid var(--edge); background: var(--glass-2); color: var(--ink-2);
+  font-family: var(--font-display); font-size: 20px; font-weight: 700;
+  padding: 9px 22px; border-radius: 999px; cursor: pointer; transition: all .2s var(--ease);
+}
+.subject-pill:hover { color: var(--ink); transform: translateY(-1px); }
+.subject-pill.is-active {
+  color: #241600; border-color: transparent;
+  background: linear-gradient(135deg, var(--amber), #ff9a59);
+  box-shadow: var(--shadow);
+}
+@media (max-width: 560px) { .subject-pill { font-size: 17px; padding: 8px 14px; } }
+
 /* ---------- Views ---------- */
 .view { display: none; }
 .view.is-active { display: block; animation: viewIn .45s var(--ease); }

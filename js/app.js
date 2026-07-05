@@ -4,7 +4,11 @@
    ===================================================================== */
 (function () {
   'use strict';
-  const C = window.COURSE;
+  /* ---- RICS APC hub: each subject is one tab, with its own course store ---- */
+  const SUBJECTS = { cpa: window.COURSE, pt: window.COURSE_PT };
+  let activeSubject = localStorage.getItem('apc-subject') || 'cpa';
+  if (!SUBJECTS[activeSubject]) activeSubject = 'cpa';
+  let C = SUBJECTS[activeSubject];
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -61,8 +65,8 @@
           <div class="hero-media"><img src="${C.meta.hero}" alt="" onerror="this.style.display='none'"></div>
           <div class="hero-body">
             <span class="hero-tag">✦ Technical · Core Competency</span>
-            <h1>Contract Practice <em>&amp;</em> Administration</h1>
-            <p class="lead">${C.meta.subtitle}. Everything for the RICS &amp; AIQS APC — formation, FIDIC, securities, payments, insurance, time, claims, termination &amp; completion — with realistic explainer videos, mind maps, flashcards, a quiz and a viva Q&amp;A bank.</p>
+            <h1>${C.meta.titleHTML || C.meta.title}</h1>
+            <p class="lead">${C.meta.lead || C.meta.subtitle}</p>
             <div class="hero-stats">
               <div class="hstat"><b>${C.parts.length}</b><span>Parts</span></div>
               <div class="hstat"><b>${totalSections}</b><span>Topics</span></div>
@@ -123,7 +127,7 @@
       html += `</div>`;
     });
 
-    html += `<footer class="site-foot glass"><p><strong>Contract Practice &amp; Administration</strong> — interactive study notes.</p><p style="margin-top:6px">Study aid only · always refer to your specific contract &amp; governing law. Clause numbers follow FIDIC 1999 Red Book unless stated.</p></footer>`;
+    html += `<footer class="site-foot glass"><p><strong>${C.meta.title}</strong> — RICS APC interactive study notes.</p><p style="margin-top:6px">Study aid only · always refer to your specific contract &amp; governing law. Clause numbers follow FIDIC 1999 Red Book unless stated.</p></footer>`;
     $('#view-notes').innerHTML = html;
   }
 
@@ -237,7 +241,9 @@
     $('#fcDeck').addEventListener('change', e => { deck = e.target.value; i = 0; show(); });
     $('#fcShuffle').addEventListener('click', () => { const d = decks[deck]; for (let k = d.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1));[d[k], d[j]] = [d[j], d[k]]; } i = 0; show(); });
     $('#fcDots').addEventListener('click', e => { const dot = e.target.closest('.fc-dot'); if (dot) { i = +dot.dataset.k; show(); } });
-    document.addEventListener('keydown', e => { if (!$('#view-flashcards').classList.contains('is-active')) return; if (e.key === 'ArrowRight') { i++; show(); } if (e.key === 'ArrowLeft') { i--; show(); } if (e.key === ' ') { e.preventDefault(); card.classList.toggle('flipped'); } });
+    if (window.__fcKeyHandler) document.removeEventListener('keydown', window.__fcKeyHandler);
+    window.__fcKeyHandler = e => { if (!$('#view-flashcards').classList.contains('is-active')) return; if (e.key === 'ArrowRight') { i++; show(); } if (e.key === 'ArrowLeft') { i--; show(); } if (e.key === ' ') { e.preventDefault(); card.classList.toggle('flipped'); } };
+    document.addEventListener('keydown', window.__fcKeyHandler);
     show();
   }
 
@@ -341,6 +347,21 @@
     [['express', 'implied', 'incorporated', 'oral contract', 'agreement', 'offer', 'acceptance', 'consideration', 'binding'], 'what-is-contract'],
     [['engineer', 'role', 'responsib', 'obligation'], 'obligations-rights'],
     [['pricing', 'lump sum', 're-measure', 'milestone'], 'contract-pricing-types-stage-milestone-payments'],
+    /* Procurement & Tendering subject (ids only exist when that subject is active) */
+    [['prequalification', 'pre-qualification'], 'pt-prequal'],
+    [['two-stage', 'two stage', 'pcsa', 'early contractor'], 'pt-strategies'],
+    [['open tender', 'selective tender', 'negotiated tender', 'e-tender', 'tendering strateg'], 'pt-strategies'],
+    [['invitation to tender', 'itt', 'tender document', 'two-envelope', 'two envelope'], 'pt-itt'],
+    [['addend', 'site visit', 'tender quer', 'bulletin'], 'pt-tenderperiod'],
+    [['normalis', 'technical evaluation', 'commercial evaluation', 'tender evaluation', 'tender opening', 'bid rigging', 'bid shopping'], 'pt-evaluation'],
+    [['icv', 'in-country value', 'contract award', 'regret letter', 'award report'], 'pt-award'],
+    [['ppp', 'pfi', 'boot', 'boom', 'swiss', 'partnering', 'alliance'], 'pt-relationship'],
+    [['management contracting', 'construction management'], 'pt-management'],
+    [['design & build', 'design and build', 'd&b', 'turnkey', 'epc', 'novated'], 'pt-db'],
+    [['traditional', 'accelerated', 'design-bid-build'], 'pt-traditional'],
+    [['gmp', 'target cost', 'framework', 'call-off', 'call off', 'serial contract', 'term contract', 'cost reimburs', 'remeasure'], 'pt-types'],
+    [['route', 'procurement'], 'pt-competency'],
+    [['tender'], 'pt-tendering'],
   ];
   function findRelated(it) {
     const hay = ((it.topic || '') + ' ' + it.q).toLowerCase();
@@ -507,8 +528,29 @@
     window.addEventListener('resize', () => { if ($('#view-mindmap').classList.contains('is-active')) drawMindmap(); });
   }
 
+  /* ---------------- Subject switching ---------------- */
+  function renderSubjectUI() {
+    $$('.subject-pill').forEach(b => b.classList.toggle('is-active', b.dataset.subject === activeSubject));
+  }
+  function renderAll() {
+    renderNotes(); renderTOC(); setupScrollSpy(); setupReveal();
+    setupFlashcards(); setupQuiz(); setupGlossary();
+  }
+  function switchSubject(id) {
+    if (!SUBJECTS[id] || id === activeSubject) return;
+    activeSubject = id; C = SUBJECTS[id];
+    localStorage.setItem('apc-subject', id);
+    SEC_INDEX = null; mmReady = false; vivaReady = false;
+    MM.map = 'course'; MM.collapsed = new Set();
+    $('#view-mindmap').innerHTML = ''; $('#view-viva').innerHTML = '';
+    $('#tocFab').textContent = '✎ Contents';
+    renderSubjectUI(); renderAll(); switchView('notes');
+  }
+  $('#subjectbar').addEventListener('click', e => { const b = e.target.closest('.subject-pill'); if (b) switchSubject(b.dataset.subject); });
+
   /* ---------------- Boot ---------------- */
   function boot() {
+    renderSubjectUI();
     renderNotes();
     renderTOC();
     setupScrollSpy();
