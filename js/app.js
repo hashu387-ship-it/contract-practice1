@@ -104,7 +104,8 @@
           ? `<div class="sec-banner" data-full="${s.img}" data-cap="${s.title}"><img loading="lazy" src="${s.img}" alt="${s.title}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div class=noimg>${s.icon || '📄'}</div>')"></div>`
           : '';
         const tags = (s.tags || []).map(t => `<span class="tg">${t}</span>`).join('');
-        const video = `<div class="blk blk-video"><video controls preload="none" playsinline poster="${s.img || ''}" src="assets/video/${s.id}.mp4" onerror="this.closest('.blk-video').style.display='none'"></video></div>`;
+        const hasVideo = !window.VIDEO_MANIFEST || window.VIDEO_MANIFEST[s.id];
+        const video = hasVideo ? `<div class="blk blk-video"><video controls preload="none" playsinline poster="${s.img || ''}" src="assets/video/${s.id}.mp4" onerror="this.closest('.blk-video').style.display='none'"></video></div>` : '';
         const blocks = s.blocks.map(renderBlock).join('');
         let flash = '';
         if (s.flashcards && s.flashcards.length) {
