@@ -451,26 +451,51 @@
      ================================================================= */
   const MM = { map: 'course', collapsed: new Set(), scale: 1, tx: 0, ty: 0, dragging: false };
   const NS = 'http://www.w3.org/2000/svg';
+  function assignMega(node, id, parentColor) {
+    node._id = id;
+    node.color = node.col || parentColor || '#2f6df0';
+    (node.children || []).forEach((c, i) => assignMega(c, id + '-' + i, node.color));
+    return node;
+  }
+  function buildMegaTree(src) { return assignMega(JSON.parse(JSON.stringify(src)), 'root', '#2f6df0'); }
   function buildCourseTree() {
+    if (C === window.COURSE_PT && window.PT_MEGAMAP) return buildMegaTree(window.PT_MEGAMAP);
     return { _id: 'root', label: C.meta.title, color: '#2f6df0', children: C.parts.map((p, i) => ({ _id: 'p' + i, label: 'P' + p.num + '. ' + p.title.split(',')[0], color: p.color, children: p.sections.map((s, j) => ({ _id: 'p' + i + 's' + j, label: s.title, color: p.color })) })) };
   }
   function buildPartTree(p) { return { _id: 'root', label: 'Part ' + p.num + ': ' + p.title.split(',')[0], color: p.color, children: p.sections.map((s, j) => ({ _id: 's' + j, label: s.title, color: p.color, children: (s.tags || []).map((t, k) => ({ _id: 's' + j + 't' + k, label: t, color: p.color })) })) }; }
   function currentTree() { if (MM.map === 'course') return buildCourseTree(); return buildPartTree(C.parts[+MM.map.slice(1)]); }
   function wrapLabel(str, max) { const words = String(str).split(/\s+/); const lines = []; let cur = ''; words.forEach(w => { if ((cur + ' ' + w).trim().length <= max) cur = (cur + ' ' + w).trim(); else { if (cur) lines.push(cur); cur = w; } }); if (cur) lines.push(cur); return lines.slice(0, 3); }
+  /* recursive radial layout — supports arbitrary depth, collapsible at every level */
+  function mmOpen(node) { return !!(node.children && node.children.length && !MM.collapsed.has(node._id)); }
+  function mmWeight(node) { return mmOpen(node) ? node.children.reduce((a, c) => a + mmWeight(c), 0) : 1; }
+  function mmRing(depth) { const r = [0, 260, 505, 730, 940, 1140]; return depth < r.length ? r[depth] : r[r.length - 1] + (depth - r.length + 1) * 205; }
   function layout(tree) {
-    const nodes = [], links = [], R1 = 255, R2 = 470;
-    nodes.push({ id: 'root', x: 0, y: 0, label: tree.label, kind: 'root', color: tree.color });
-    const kids = tree.children;
-    kids.forEach(b => { b._open = b.children && b.children.length && !MM.collapsed.has(b._id); b._w = Math.max(1, b._open ? b.children.length : 1); });
-    const total = kids.reduce((a, b) => a + b._w, 0); let ang = -Math.PI / 2;
-    kids.forEach(b => {
-      const span = 2 * Math.PI * b._w / total, center = ang + span / 2, bx = Math.cos(center) * R1, by = Math.sin(center) * R1;
-      nodes.push({ id: b._id, x: bx, y: by, label: b.label, kind: 'branch', color: b.color, has: b.children && b.children.length, open: b._open });
-      links.push({ x1: 0, y1: 0, x2: bx, y2: by, color: b.color });
-      if (b._open) { const L = b.children.length, pad = Math.min(span * 0.14, 0.14), a0 = ang + pad, a1 = ang + span - pad; b.children.forEach((l, j) => { const t = L === 1 ? (a0 + a1) / 2 : a0 + (a1 - a0) * j / (L - 1), rr = R2 + (j % 2) * 82, lx = Math.cos(t) * rr, ly = Math.sin(t) * rr; nodes.push({ id: l._id, x: lx, y: ly, label: l.label, kind: 'leaf', color: b.color }); links.push({ x1: bx, y1: by, x2: lx, y2: ly, color: b.color, thin: true }); }); }
-      ang += span;
-    });
+    const nodes = [], links = [];
+    nodes.push({ id: tree._id || 'root', x: 0, y: 0, label: tree.label, kind: 'root', color: tree.color || '#2f6df0', has: !!(tree.children && tree.children.length), open: true, depth: 0 });
+    (function place(node, depth, a0, a1, px, py) {
+      if (!mmOpen(node)) return;
+      const kids = node.children, totalW = kids.reduce((a, c) => a + mmWeight(c), 0) || 1, full = a1 - a0;
+      let ang = a0;
+      kids.forEach((k, idx) => {
+        const span = full * mmWeight(k) / totalW, center = ang + span / 2;
+        const kHas = !!(k.children && k.children.length), leaf = !kHas;
+        const jitter = (depth >= 1 && leaf) ? (idx % 2) * 48 : 0;
+        const r = mmRing(depth + 1) + jitter, kx = Math.cos(center) * r, ky = Math.sin(center) * r;
+        nodes.push({ id: k._id, x: kx, y: ky, label: k.label, kind: kHas ? 'branch' : 'leaf', color: k.color || node.color, has: kHas, open: mmOpen(k), depth: depth + 1 });
+        links.push({ x1: px, y1: py, x2: kx, y2: ky, color: k.color || node.color, thin: leaf || depth + 1 >= 3 });
+        place(k, depth + 1, ang, ang + span, kx, ky);
+        ang += span;
+      });
+    })(tree, 0, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI, 0, 0);
     return { nodes, links };
+  }
+  function allBranchIds(tree) { const out = []; (function walk(n) { (n.children || []).forEach(c => { if (c.children && c.children.length) { out.push(c._id); walk(c); } }); })(tree); return out; }
+  /* for the deep "Full syllabus" map, start with the deepest sub-branches folded so the
+     skeleton reads clearly; each opens on click. No-op for the shallow course/part maps. */
+  function seedMegaCollapse() {
+    if (!(MM.map === 'course' && C === window.COURSE_PT && window.PT_MEGAMAP)) return;
+    const out = []; (function walk(n, d) { (n.children || []).forEach(c => { if (c.children && c.children.length) { if (d + 1 >= 3) out.push(c._id); walk(c, d + 1); } }); })(currentTree(), 0);
+    if (out.length) MM.collapsed = new Set(out);
   }
   function drawMindmap() {
     const stage = $('#mmStage'); if (!stage) return;
@@ -502,24 +527,25 @@
     const el = $('#view-mindmap');
     if (!mmReady) {
       el.innerHTML = `<div class="mm-shell"><div class="mm-head"><h2>🧠 Mind Maps</h2>
-        <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#2f6df0">Whole course</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
-        <p>Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
+        <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#2f6df0">${C === window.COURSE_PT ? '🗺️ Full syllabus' : 'Whole course'}</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
+        <p>${C === window.COURSE_PT ? 'The entire Procurement &amp; Tendering syllabus in one map. ' : ''}Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
         <div class="mm-stage-wrap"><svg class="mm-stage" id="mmStage" xmlns="${NS}"></svg>
           <div class="mm-hint">Drag · Scroll to zoom · Click branch to fold</div>
           <div class="mm-controls"><button id="mmIn">＋</button><button id="mmOut">－</button><button id="mmFit" title="Fit">⤢</button><button id="mmExpand" title="Expand all">⊕</button><button id="mmCollapse" title="Collapse all">⊖</button></div>
           <div class="mm-legend"><b><span class="dot" style="background:#2f6df0"></span>Central</b><b><span class="dot" style="background:var(--amber)"></span>Topic</b><b><span class="dot" style="background:transparent;border:2px solid var(--ink-3)"></span>Concept</b></div>
         </div></div>`;
       wireMindmap(); mmReady = true;
+      if (MM.map === 'course') seedMegaCollapse();
     }
     drawMindmap();
   }
   function wireMindmap() {
     const stage = $('#mmStage');
-    $('#mmPicker').addEventListener('click', e => { const b = e.target.closest('.mm-pick'); if (!b) return; MM.map = b.dataset.map; MM.collapsed = new Set(); $$('.mm-pick').forEach(x => { x.classList.toggle('on', x === b); if (x !== b && x.dataset.map !== 'course') x.style.background = ''; }); if (b.dataset.map !== 'course') b.style.background = b.style.getPropertyValue('--c'); drawMindmap(); });
+    $('#mmPicker').addEventListener('click', e => { const b = e.target.closest('.mm-pick'); if (!b) return; MM.map = b.dataset.map; MM.collapsed = new Set(); if (b.dataset.map === 'course') seedMegaCollapse(); $$('.mm-pick').forEach(x => { x.classList.toggle('on', x === b); if (x !== b && x.dataset.map !== 'course') x.style.background = ''; }); if (b.dataset.map !== 'course') b.style.background = b.style.getPropertyValue('--c'); drawMindmap(); });
     const zoom = f => { MM.scale = clamp(MM.scale * f, 0.2, 2.4); applyMM(); };
     $('#mmIn').addEventListener('click', () => zoom(1.2)); $('#mmOut').addEventListener('click', () => zoom(1 / 1.2)); $('#mmFit').addEventListener('click', drawMindmap);
     $('#mmExpand').addEventListener('click', () => { MM.collapsed = new Set(); drawMindmap(); });
-    $('#mmCollapse').addEventListener('click', () => { MM.collapsed = new Set(currentTree().children.filter(c => c.children && c.children.length).map(c => c._id)); drawMindmap(); });
+    $('#mmCollapse').addEventListener('click', () => { MM.collapsed = new Set(allBranchIds(currentTree())); drawMindmap(); });
     let sx, sy, ox, oy;
     stage.addEventListener('pointerdown', e => { MM.dragging = true; stage.classList.add('grabbing'); sx = e.clientX; sy = e.clientY; ox = MM.tx; oy = MM.ty; stage.setPointerCapture(e.pointerId); });
     stage.addEventListener('pointermove', e => { if (!MM.dragging) return; MM.tx = ox + (e.clientX - sx); MM.ty = oy + (e.clientY - sy); applyMM(); });
