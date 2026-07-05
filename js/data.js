@@ -27,4 +27,5 @@ window.COURSE = {
   parts: [],
   glossary: [],
   quiz: [],
+  viva: [],
 };
