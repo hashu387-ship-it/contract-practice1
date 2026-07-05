@@ -293,8 +293,8 @@ table.tbl tr:hover td { background: var(--hi); }
 .figure:hover img { transform: scale(1.03); }
 .figure figcaption { padding: 9px 14px; font-size: 14.5px; color: var(--ink-3); font-style: italic; }
 
-.blk-video { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--edge); background: #000; }
-.blk-video video { width: 100%; display: block; }
+.blk-video { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--edge); background: #05070d; display: grid; place-items: center; }
+.blk-video video { width: 100%; max-width: 560px; max-height: 74vh; display: block; }
 .video-note { font-size: 14px; color: var(--ink-3); margin-top: 7px; }
 
 /* Section recall (details) */
