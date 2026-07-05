@@ -1,0 +1,18 @@
+# Vercel (local project link)
+.vercel
+
+# Dependencies (none currently, but in case tooling is added)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+.tmp/
