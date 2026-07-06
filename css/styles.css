@@ -35,6 +35,7 @@
   --amber-ink: #ffe6ad;
   --shadow: 0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10);
   --a1: #2f6df0; --a2: #9b51e0; --a3: #00b3a4; --a4: #ff7a59; --a5: #ffcf6b;
+  --hg1: #7fb6ff; --hg2: #c79bff;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -54,10 +55,19 @@
   --amber-ink: #a05f00;
   --shadow: 0 10px 40px rgba(70,90,140,.28), inset 0 1px 0 rgba(255,255,255,.65);
   --a1: #2f6df0; --a2: #9b51e0; --a3: #00a99b; --a4: #ff7a59; --a5: #f0a500;
+  --hg1: #2f6df0; --hg2: #8b34c9;
   color-scheme: light;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Coloured headings — gradient accent (theme-aware) */
+.hero h1, .part-head h2, .sec-head h3,
+.mm-head h2, .quiz-intro h2, .quiz-result h2, .viva-head h2 {
+  background: linear-gradient(100deg, var(--hg1), var(--hg2) 92%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 18px); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
