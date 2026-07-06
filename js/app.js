@@ -450,6 +450,8 @@
      MIND MAP — radial, collapsible, pan + zoom
      ================================================================= */
   const MM = { map: 'course', collapsed: new Set(), scale: 1, tx: 0, ty: 0, dragging: false };
+  let mmMode = 'radial', mmLang = 'en';
+  function mmText(n) { return mmLang === 'ta' ? (n.dt || n.d || '') : (n.d || ''); }
   const NS = 'http://www.w3.org/2000/svg';
   function assignMega(node, id, parentColor) {
     node._id = id;
@@ -532,7 +534,8 @@
       const style = n.col ? ` style="--hc:${n.col}"` : '';
       const collapsed = depth >= 3 && has ? ' is-collapsed' : '';
       let h = `<div class="hc-node${has ? ' hc-has' : ''}${collapsed}" data-depth="${depth}"${style}>`;
-      h += `<div class="hc-card">${has ? '<button class="hc-tog" aria-label="Fold"></button>' : '<span class="hc-dot"></span>'}<div class="hc-body"><div class="hc-title">${esc(n.t)}</div>${n.d ? `<div class="hc-explain">${esc(n.d)}</div>` : ''}</div></div>`;
+      const ex = mmText(n);
+      h += `<div class="hc-card">${has ? '<button class="hc-tog" aria-label="Fold"></button>' : '<span class="hc-dot"></span>'}<div class="hc-body"><div class="hc-title">${esc(n.t)}</div>${ex ? `<div class="hc-explain">${esc(ex)}</div>` : ''}</div></div>`;
       if (has) h += `<div class="hc-children">${kids.map(k => node(k, depth + 1)).join('')}</div>`;
       return h + '</div>';
     }
@@ -540,39 +543,62 @@
     c.querySelectorAll('.hc-tog').forEach(b => b.addEventListener('click', () => b.closest('.hc-node').classList.toggle('is-collapsed')));
     c.querySelectorAll('.hc-allbtn').forEach(b => b.addEventListener('click', () => { const ex = b.dataset.hc === 'expand'; c.querySelectorAll('.hc-node.hc-has').forEach(n => n.classList.toggle('is-collapsed', !ex)); }));
     const total = c.querySelectorAll('.hc-node').length;
-    c.querySelector('.hc-count').textContent = total + ' elements · every one explained';
+    c.querySelector('.hc-count').textContent = total + (mmLang === 'ta' ? ' elements · ஒவ்வொன்றும் விளக்கப்பட்டது' : ' elements · every one explained');
+  }
+  /* ---- Org chart: the full syllabus as a top-down organisation chart ---- */
+  function renderOrgChart() {
+    const c = $('#mmOrg'); if (!c || !window.PT_HIERARCHY) return;
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    function node(n, depth) {
+      const kids = n.c || [], has = kids.length;
+      const style = n.col ? ` style="--oc:${n.col}"` : '';
+      const collapsed = depth >= 2 && has ? ' is-collapsed' : '';
+      const ex = mmText(n);
+      let h = `<li class="oc-li${collapsed}"${style}><div class="oc-box${has ? ' oc-has' : ''}" data-depth="${depth}"><div class="oc-title">${esc(n.t)}</div>${ex ? `<div class="oc-desc">${esc(ex)}</div>` : ''}${has ? '<button class="oc-tog" aria-label="Fold"></button>' : ''}</div>`;
+      if (has) h += `<ul>${kids.map(k => node(k, depth + 1)).join('')}</ul>`;
+      return h + '</li>';
+    }
+    c.innerHTML = `<div class="hc-tools"><span class="hc-count">${mmLang === 'ta' ? 'மேலிருந்து கீழ் org chart · அனைத்து elements' : 'Top-down org chart · all elements'}</span><button class="hc-allbtn" data-hc="expand">⊕ Expand all</button><button class="hc-allbtn" data-hc="collapse">⊖ Collapse all</button></div><div class="oc-scroll"><div class="oc-chart"><ul>${node(window.PT_HIERARCHY, 0)}</ul></div></div>`;
+    const scroll = c.querySelector('.oc-scroll');
+    const centre = () => { scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2); };
+    centre();
+    c.querySelectorAll('.oc-tog').forEach(b => b.addEventListener('click', () => { b.closest('.oc-li').classList.toggle('is-collapsed'); centre(); }));
+    c.querySelectorAll('.hc-allbtn').forEach(b => b.addEventListener('click', () => { const ex = b.dataset.hc === 'expand'; c.querySelectorAll('.oc-li').forEach(li => { if (li.querySelector(':scope > ul')) li.classList.toggle('is-collapsed', !ex); }); centre(); }));
   }
   function initMindmap() {
     const el = $('#view-mindmap');
     if (!mmReady) {
       const hasChart = C === window.COURSE_PT && window.PT_HIERARCHY;
       el.innerHTML = `<div class="mm-shell"><div class="mm-head"><h2>🧠 Mind Maps</h2>
-        ${hasChart ? `<div class="mm-mode" id="mmMode"><button class="mm-modebtn on" data-mode="radial">🌐 Radial map</button><button class="mm-modebtn" data-mode="chart">🗂️ Hierarchy + notes</button></div>` : ''}
+        ${hasChart ? `<div class="mm-mode" id="mmMode"><button class="mm-modebtn on" data-mode="radial">🌐 Radial map</button><button class="mm-modebtn" data-mode="chart">🗂️ Hierarchy + notes</button><button class="mm-modebtn" data-mode="org">🏢 Org chart</button><span class="mm-langgroup"><button class="mm-langbtn${mmLang === 'en' ? ' on' : ''}" data-lang="en">EN</button><button class="mm-langbtn${mmLang === 'ta' ? ' on' : ''}" data-lang="ta">தமிழ்</button></span></div>` : ''}
         <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#2f6df0">${C === window.COURSE_PT ? '🗺️ Full syllabus' : 'Whole course'}</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
-        <p>${C === window.COURSE_PT ? 'The entire Procurement &amp; Tendering syllabus in one map. ' : ''}Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
+        <p>${C === window.COURSE_PT ? 'The entire Procurement &amp; Tendering syllabus — as a radial map, an explained hierarchy, or a top-down org chart. Switch EN / தமிழ் for explanations. ' : ''}Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
         <div class="mm-stage-wrap"><svg class="mm-stage" id="mmStage" xmlns="${NS}"></svg>
           <div class="mm-hint">Drag · Scroll to zoom · Click branch to fold</div>
           <div class="mm-controls"><button id="mmIn">＋</button><button id="mmOut">－</button><button id="mmFit" title="Fit">⤢</button><button id="mmExpand" title="Expand all">⊕</button><button id="mmCollapse" title="Collapse all">⊖</button></div>
           <div class="mm-legend"><b><span class="dot" style="background:#2f6df0"></span>Central</b><b><span class="dot" style="background:var(--amber)"></span>Topic</b><b><span class="dot" style="background:transparent;border:2px solid var(--ink-3)"></span>Concept</b></div>
         </div>
-        ${hasChart ? `<div class="mm-chart" id="mmChart" hidden></div>` : ''}</div>`;
-      wireMindmap(); mmReady = true;
+        ${hasChart ? `<div class="mm-chart" id="mmChart" hidden></div><div class="mm-org" id="mmOrg" hidden></div>` : ''}</div>`;
+      wireMindmap(); mmReady = true; mmMode = 'radial';
       if (MM.map === 'course') seedMegaCollapse();
     }
     drawMindmap();
   }
   function wireMindmap() {
     const stage = $('#mmStage');
+    function applyMMMode() {
+      const sw = $('.mm-stage-wrap'), pk = $('#mmPicker'), ch = $('#mmChart'), og = $('#mmOrg');
+      if (sw) sw.style.display = mmMode === 'radial' ? '' : 'none';
+      if (pk) pk.style.display = mmMode === 'radial' ? '' : 'none';
+      if (ch) { ch.hidden = mmMode !== 'chart'; if (mmMode === 'chart') renderHierarchy(); }
+      if (og) { og.hidden = mmMode !== 'org'; if (mmMode === 'org') renderOrgChart(); }
+      if (mmMode === 'radial') drawMindmap();
+    }
     const modeEl = $('#mmMode');
     if (modeEl) modeEl.addEventListener('click', e => {
-      const b = e.target.closest('.mm-modebtn'); if (!b) return;
-      const chart = b.dataset.mode === 'chart';
-      $$('.mm-modebtn').forEach(x => x.classList.toggle('on', x === b));
-      const sw = $('.mm-stage-wrap'), pk = $('#mmPicker'), ch = $('#mmChart');
-      if (sw) sw.style.display = chart ? 'none' : '';
-      if (pk) pk.style.display = chart ? 'none' : '';
-      if (ch) { ch.hidden = !chart; if (chart && !ch.dataset.rendered) { renderHierarchy(); ch.dataset.rendered = '1'; } }
-      if (!chart) drawMindmap();
+      const m = e.target.closest('.mm-modebtn'), lb = e.target.closest('.mm-langbtn');
+      if (m) { mmMode = m.dataset.mode; $$('.mm-modebtn').forEach(x => x.classList.toggle('on', x === m)); applyMMMode(); }
+      else if (lb) { mmLang = lb.dataset.lang; $$('.mm-langbtn').forEach(x => x.classList.toggle('on', x === lb)); if (mmMode === 'chart') renderHierarchy(); else if (mmMode === 'org') renderOrgChart(); }
     });
     $('#mmPicker').addEventListener('click', e => { const b = e.target.closest('.mm-pick'); if (!b) return; MM.map = b.dataset.map; MM.collapsed = new Set(); if (b.dataset.map === 'course') seedMegaCollapse(); $$('.mm-pick').forEach(x => { x.classList.toggle('on', x === b); if (x !== b && x.dataset.map !== 'course') x.style.background = ''; }); if (b.dataset.map !== 'course') b.style.background = b.style.getPropertyValue('--c'); drawMindmap(); });
     const zoom = f => { MM.scale = clamp(MM.scale * f, 0.2, 2.4); applyMM(); };
