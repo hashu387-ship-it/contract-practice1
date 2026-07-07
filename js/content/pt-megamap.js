@@ -7,7 +7,7 @@
    ===================================================================== */
 window.PT_MEGAMAP = {
   label: 'Procurement & Tendering',
-  col: '#2f6df0',
+  col: '#d4af37',
   children: [
     {
       label: 'PROCUREMENT — the strategy', col: '#0e7fb8',

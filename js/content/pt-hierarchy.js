@@ -9,7 +9,7 @@ window.PT_HIERARCHY = {
   t: 'Procurement & Tendering',
   d: 'The technical competency covering how a construction project is structured and delivered (procurement) and how the contract price is obtained and fixed (tendering). Get the strategy right and the tender simply delivers the right contractor at the right price.',
   dt: 'ஒரு கட்டுமான project எப்படி structure செய்யப்பட்டு deliver செய்யப்படுகிறது (procurement), contract price எப்படி பெறப்பட்டு நிர்ணயிக்கப்படுகிறது (tendering) என்பதை உள்ளடக்கிய technical competency. Strategy சரியாக இருந்தால், tender சரியான contractor-ஐ சரியான விலையில் கொண்டுவரும்.',
-  col: '#2f6df0',
+  col: '#d4af37',
   c: [
     {
       t: 'PROCUREMENT — the strategy', col: '#0e7fb8',

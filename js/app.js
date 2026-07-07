@@ -518,7 +518,7 @@
       inner += `<g class="mm-node" data-id="${n.id}" data-kind="${n.kind}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${n.kind === 'root' ? 15 : 12}" fill="${fill}" stroke="${stroke}" stroke-width="2"/><text x="${n.x}" y="${n.y + 5}" text-anchor="middle" fill="${tcol}" font-weight="700" font-size="${fs}">${tspans}</text>${badge}</g>`;
     });
     inner += '</g>';
-    stage.innerHTML = `<defs><linearGradient id="mmGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6df0"/><stop offset="1" stop-color="#9b51e0"/></linearGradient></defs>` + inner;
+    stage.innerHTML = `<defs><linearGradient id="mmGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6c15a"/><stop offset="1" stop-color="#b8891f"/></linearGradient></defs>` + inner;
     const pad = 90, minX = Math.min(...nodes.map(n => n.x)) - 130, maxX = Math.max(...nodes.map(n => n.x)) + 130, minY = Math.min(...nodes.map(n => n.y)) - 60, maxY = Math.max(...nodes.map(n => n.y)) + 60;
     MM.scale = clamp(Math.min((W - pad) / (maxX - minX), (H - pad) / (maxY - minY)), 0.26, 1.3);
     MM.tx = W / 2 - ((minX + maxX) / 2) * MM.scale; MM.ty = H / 2 - ((minY + maxY) / 2) * MM.scale; applyMM();
@@ -571,12 +571,12 @@
       const hasChart = C === window.COURSE_PT && window.PT_HIERARCHY;
       el.innerHTML = `<div class="mm-shell"><div class="mm-head"><h2>🧠 Mind Maps</h2>
         ${hasChart ? `<div class="mm-mode" id="mmMode"><button class="mm-modebtn on" data-mode="radial">🌐 Radial map</button><button class="mm-modebtn" data-mode="chart">🗂️ Hierarchy + notes</button><button class="mm-modebtn" data-mode="org">🏢 Org chart</button><span class="mm-langgroup"><button class="mm-langbtn${mmLang === 'en' ? ' on' : ''}" data-lang="en">EN</button><button class="mm-langbtn${mmLang === 'ta' ? ' on' : ''}" data-lang="ta">தமிழ்</button></span></div>` : ''}
-        <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#2f6df0">${C === window.COURSE_PT ? '🗺️ Full syllabus' : 'Whole course'}</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
+        <div class="mm-picker" id="mmPicker"><button class="mm-pick on" data-map="course" style="background:#b8891f">${C === window.COURSE_PT ? '🗺️ Full syllabus' : 'Whole course'}</button>${C.parts.map((p, i) => `<button class="mm-pick" data-map="p${i}" style="--c:${p.color}">Part ${p.num}</button>`).join('')}</div>
         <p>${C === window.COURSE_PT ? 'The entire Procurement &amp; Tendering syllabus — as a radial map, an explained hierarchy, or a top-down org chart. Switch EN / தமிழ் for explanations. ' : ''}Click a coloured branch to fold/unfold. Drag to pan, scroll to zoom.</p></div>
         <div class="mm-stage-wrap"><svg class="mm-stage" id="mmStage" xmlns="${NS}"></svg>
           <div class="mm-hint">Drag · Scroll to zoom · Click branch to fold</div>
           <div class="mm-controls"><button id="mmIn">＋</button><button id="mmOut">－</button><button id="mmFit" title="Fit">⤢</button><button id="mmExpand" title="Expand all">⊕</button><button id="mmCollapse" title="Collapse all">⊖</button></div>
-          <div class="mm-legend"><b><span class="dot" style="background:#2f6df0"></span>Central</b><b><span class="dot" style="background:var(--amber)"></span>Topic</b><b><span class="dot" style="background:transparent;border:2px solid var(--ink-3)"></span>Concept</b></div>
+          <div class="mm-legend"><b><span class="dot" style="background:#b8891f"></span>Central</b><b><span class="dot" style="background:var(--amber)"></span>Topic</b><b><span class="dot" style="background:transparent;border:2px solid var(--ink-3)"></span>Concept</b></div>
         </div>
         ${hasChart ? `<div class="mm-chart" id="mmChart" hidden></div><div class="mm-org" id="mmOrg" hidden></div>` : ''}</div>`;
       wireMindmap(); mmReady = true; mmMode = 'radial';
