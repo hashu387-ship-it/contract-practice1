@@ -1,0 +1,9 @@
+/* Self-hosted fonts (latin subset) — Caveat, Shantell Sans, JetBrains Mono */
+@font-face{font-family:'Caveat';font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/Caveat-600.woff2) format('woff2');}
+@font-face{font-family:'Caveat';font-style:normal;font-weight:700;font-display:swap;src:url(../assets/fonts/Caveat-700.woff2) format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(../assets/fonts/JetBrainsMono-500.woff2) format('woff2');}
+@font-face{font-family:'Shantell Sans';font-style:italic;font-weight:500;font-display:swap;src:url(../assets/fonts/ShantellSans-500i.woff2) format('woff2');}
+@font-face{font-family:'Shantell Sans';font-style:normal;font-weight:400;font-display:swap;src:url(../assets/fonts/ShantellSans-400.woff2) format('woff2');}
+@font-face{font-family:'Shantell Sans';font-style:normal;font-weight:500;font-display:swap;src:url(../assets/fonts/ShantellSans-500.woff2) format('woff2');}
+@font-face{font-family:'Shantell Sans';font-style:normal;font-weight:600;font-display:swap;src:url(../assets/fonts/ShantellSans-600.woff2) format('woff2');}
+@font-face{font-family:'Shantell Sans';font-style:normal;font-weight:700;font-display:swap;src:url(../assets/fonts/ShantellSans-700.woff2) format('woff2');}
